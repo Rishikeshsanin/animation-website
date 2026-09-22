@@ -1,23 +1,29 @@
 # MotionLab
 
-MotionLab is a polished, visual learning website for CSS and Bootstrap motion. Instead of reading animation properties in isolation, learners can replay each effect, understand what it does, tune timing and easing, and copy ready-to-use code.
+MotionLab is an interactive learning and reference website for CSS and Bootstrap motion. Instead of reading animation properties in isolation, you can see an effect in-place, replay it on hover, inspect its timing, tune the easing, and copy ready-to-use CSS.
+
+## Live
+
+**https://motionlab-production-2310.up.railway.app**
 
 ## Highlights
 
-- 80 interactive CSS animation lessons
-- 9 Bootstrap motion/component labs
-- Categories for entrances, exits, attention effects, transforms, text, loaders, and backgrounds
-- Live replayable previews
-- Search and category filtering
-- Interactive duration, easing, and iteration controls
-- Copyable CSS snippets
+- **142 interactive CSS motion lessons**
+- Dedicated categories for Entrances, Exits, Attention, Transforms, Text, Hover, UI, Loaders, 3D, and Backgrounds
+- Animation cards preview automatically as they enter view
+- Hover/focus replays the animation directly inside the card
+- Advanced animation inspector with live preview, timeline, duration, easing, iterations, motion properties, and copyable CSS
+- Search by animation name, description, category, property/use-case tags
+- Category counts and keyboard shortcut (`/`) for search
+- Richer demo objects for buttons, cards, pills, icons, text, dots, rings, and surfaces
 - Dedicated animation playground
-- Bootstrap carousel, fade, collapse, accordion, modal, offcanvas, toast, dropdown, and dismissible alert examples
+- 9 Bootstrap motion/component labs
+- Bootstrap carousel, carousel fade, collapse, accordion, modal, offcanvas, toast, dropdown, and dismissible alert examples
 - Local learning progress using `localStorage`
 - Dark and light themes
-- Responsive layout for desktop, tablet, and mobile
+- Responsive desktop, tablet, and mobile layouts
 - `prefers-reduced-motion` accessibility support
-- No login, backend, or database required
+- No login, backend, Supabase project, or database required
 
 ## Tech Stack
 
@@ -26,7 +32,7 @@ MotionLab is a polished, visual learning website for CSS and Bootstrap motion. I
 - Vite
 - Bootstrap 5
 - Lucide React
-- Custom CSS animation system
+- Data-driven custom CSS animation system
 
 ## Development
 
@@ -39,6 +45,7 @@ Production build:
 
 ```bash
 npm run build
+npm start
 ```
 
 ## Project Structure
@@ -50,15 +57,21 @@ src/
 │   └── bootstrapLessons.ts
 ├── App.tsx
 ├── main.tsx
-└── styles.css
+├── styles.css
+└── v2.css
+server.mjs
 ```
 
-The animation library is data-driven. Each lesson stores its animation frames and learning metadata, while the UI dynamically generates previews and copyable CSS. This makes the library easy to extend without duplicating presentation logic.
+The animation library is data-driven: each lesson stores its keyframes, defaults, complexity, preview shape, tags, and learning metadata. The interface generates the live previews, search index, inspector, and copyable CSS from that same source of truth.
+
+## Deployment
+
+MotionLab is deployed as its own isolated Railway project and service from this repository's `main` branch. It does not share a database or runtime with the owner's other projects.
 
 ## Privacy & Storage
 
-MotionLab is frontend-only. It does not require Supabase or any other database. Learning progress and theme preference are stored locally in the browser.
+MotionLab is frontend-only. Learning progress and theme preference stay in the user's browser through `localStorage`.
 
 ## Repository
 
-Built in: [Rishikeshsanin/animation-website](https://github.com/Rishikeshsanin/animation-website)
+[Rishikeshsanin/animation-website](https://github.com/Rishikeshsanin/animation-website)
