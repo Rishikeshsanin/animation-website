@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
+  ArrowUpRight,
   BookOpen,
   Check,
   CheckCircle2,
@@ -9,13 +10,13 @@ import {
   Code2,
   Copy,
   Github,
+  Grid2X2,
   Moon,
   Play,
   RefreshCw,
   Search,
-  Sparkles,
+  SlidersHorizontal,
   Sun,
-  WandSparkles,
   X,
   Zap,
 } from 'lucide-react'
@@ -29,13 +30,11 @@ import {
 import { bootstrapLessons, fundamentals, type BootstrapLesson } from './data/bootstrapLessons'
 
 const easingOptions = [
-  'ease',
-  'linear',
-  'ease-in',
-  'ease-out',
-  'ease-in-out',
-  'cubic-bezier(.2,.8,.2,1)',
-  'cubic-bezier(.34,1.56,.64,1)',
+  { label: 'Smooth', value: 'cubic-bezier(.2,.8,.2,1)' },
+  { label: 'Spring', value: 'cubic-bezier(.34,1.56,.64,1)' },
+  { label: 'Ease out', value: 'ease-out' },
+  { label: 'Ease in-out', value: 'ease-in-out' },
+  { label: 'Linear', value: 'linear' },
 ]
 
 const navItems = [
@@ -49,11 +48,43 @@ function DemoShape({ animation }: { animation: AnimationLesson }) {
   if (animation.demoShape === 'text') return <span className="demo-text">Motion</span>
   if (animation.demoShape === 'dot') return <span className="demo-dot" />
   if (animation.demoShape === 'ring') return <span className="demo-ring" />
+  if (animation.demoShape === 'button') {
+    return <span className="demo-button">Explore <ArrowUpRight size={13} /></span>
+  }
+  if (animation.demoShape === 'card') {
+    return (
+      <span className="demo-card">
+        <span className="demo-card-media" />
+        <span className="demo-card-line demo-card-line-lg" />
+        <span className="demo-card-line" />
+      </span>
+    )
+  }
+  if (animation.demoShape === 'pill') {
+    return <span className="demo-pill"><i /> Active</span>
+  }
+  if (animation.demoShape === 'icon') {
+    return <span className="demo-icon"><ArrowUpRight size={22} /></span>
+  }
   return (
     <span className="demo-box">
       <span />
     </span>
   )
+}
+
+function getMotionProperties(animation: AnimationLesson) {
+  const source = animation.frames
+  const candidates = [
+    ['transform', 'Transform'],
+    ['opacity', 'Opacity'],
+    ['filter', 'Filter'],
+    ['clip-path', 'Clip path'],
+    ['box-shadow', 'Shadow'],
+    ['border-radius', 'Radius'],
+    ['letter-spacing', 'Tracking'],
+  ] as const
+  return candidates.filter(([property]) => source.includes(property)).map(([, label]) => label)
 }
 
 function AnimationCard({
@@ -63,28 +94,72 @@ function AnimationCard({
   animation: AnimationLesson
   onOpen: (animation: AnimationLesson) => void
 }) {
-  const [key, setKey] = useState(0)
-  const duration = animation.duration ?? 850
+  const cardRef = useRef<HTMLElement | null>(null)
+  const [previewKey, setPreviewKey] = useState(0)
+  const [inView, setInView] = useState(false)
+  const duration = animation.duration ?? 900
+  const loops = animation.iterations === 'infinite' ? 'infinite' : '2'
+  const direction = animation.iterations === 'infinite' ? 'normal' : 'alternate'
+
+  useEffect(() => {
+    const node = cardRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          setPreviewKey((value) => value + 1)
+          observer.unobserve(node)
+        }
+      },
+      { threshold: 0.38 },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  const replay = () => {
+    setInView(true)
+    setPreviewKey((value) => value + 1)
+  }
 
   return (
-    <article className="animation-card">
+    <article
+      ref={cardRef}
+      className="animation-card"
+      onMouseEnter={replay}
+      onFocus={replay}
+    >
       <button
         type="button"
         className="animation-preview"
-        aria-label={`Replay ${animation.title}`}
-        onClick={() => setKey((value) => value + 1)}
+        onClick={() => onOpen(animation)}
+        aria-label={`Open ${animation.title} lesson`}
       >
+        <div className="preview-topline">
+          <span>{animation.level}</span>
+          {animation.featured && <span className="popular-chip">Popular</span>}
+        </div>
+
         <div
-          key={key}
+          key={previewKey}
           className="preview-object"
-          style={{
-            animation: `ml-${animation.id} ${duration}ms ${animation.easing ?? 'ease'} 0ms ${animation.iterations ?? '1'} both`,
-          }}
+          style={inView ? {
+            animationName: `ml-${animation.id}`,
+            animationDuration: `${duration}ms`,
+            animationTimingFunction: animation.easing ?? 'ease',
+            animationIterationCount: loops,
+            animationDirection: direction,
+            animationFillMode: 'both',
+          } : undefined}
         >
           <DemoShape animation={animation} />
         </div>
-        <span className="preview-replay">
-          <RefreshCw size={14} /> Replay
+
+        <span className="preview-hint">
+          <Play size={12} fill="currentColor" /> hover to replay
         </span>
       </button>
 
@@ -96,7 +171,7 @@ function AnimationCard({
         <h3>{animation.title}</h3>
         <p>{animation.description}</p>
         <button className="learn-link" type="button" onClick={() => onOpen(animation)}>
-          Learn & copy <ArrowRight size={15} />
+          Inspect animation <ArrowRight size={14} />
         </button>
       </div>
     </article>
@@ -111,7 +186,7 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
     return (
       <div className={`bs-carousel-mini ${lesson.id === 'carousel-fade' ? 'is-fade' : ''}`}>
         <button type="button" onClick={() => setSlide((slide + 2) % 3)} aria-label="Previous slide">
-          <ChevronLeft size={18} />
+          <ChevronLeft size={17} />
         </button>
         <div className="bs-carousel-stage">
           {[0, 1, 2].map((item) => (
@@ -121,13 +196,11 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
             </div>
           ))}
           <div className="bs-dots">
-            {[0, 1, 2].map((item) => (
-              <i key={item} className={slide === item ? 'active' : ''} />
-            ))}
+            {[0, 1, 2].map((item) => <i key={item} className={slide === item ? 'active' : ''} />)}
           </div>
         </div>
         <button type="button" onClick={() => setSlide((slide + 1) % 3)} aria-label="Next slide">
-          <ChevronRight size={18} />
+          <ChevronRight size={17} />
         </button>
       </div>
     )
@@ -141,7 +214,7 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
           <span className={open ? 'rotate' : ''}>+</span>
         </button>
         <div className={`bs-collapse-content ${open ? 'open' : ''}`}>
-          <p>Bootstrap transitions the panel height while managing visible state.</p>
+          <p>Bootstrap transitions the panel height while managing its visible state.</p>
         </div>
       </div>
     )
@@ -153,7 +226,7 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
         <button type="button" className="bs-primary" onClick={() => setOpen(true)}>Open modal</button>
         <div className={`bs-modal-layer ${open ? 'open' : ''}`} onClick={() => setOpen(false)}>
           <div className="bs-modal-box" onClick={(event) => event.stopPropagation()}>
-            <span className="mini-eyebrow">Bootstrap modal</span>
+            <span>Modal</span>
             <strong>Motion with purpose.</strong>
             <button type="button" onClick={() => setOpen(false)}>Close</button>
           </div>
@@ -167,7 +240,7 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
       <div className="bs-offcanvas-mini">
         <button type="button" className="bs-primary" onClick={() => setOpen(true)}>Open panel</button>
         <div className={`bs-offcanvas-sheet ${open ? 'open' : ''}`}>
-          <button type="button" aria-label="Close panel" onClick={() => setOpen(false)}><X size={16} /></button>
+          <button type="button" aria-label="Close panel" onClick={() => setOpen(false)}><X size={15} /></button>
           <strong>Offcanvas</strong>
           <span>Slides from an edge.</span>
         </div>
@@ -180,9 +253,9 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
       <div className="bs-toast-mini">
         <button type="button" className="bs-primary" onClick={() => setOpen(true)}>Show toast</button>
         <div className={`bs-toast-card ${open ? 'open' : ''}`}>
-          <CheckCircle2 size={17} />
+          <CheckCircle2 size={16} />
           <span>Animation copied.</span>
-          <button type="button" aria-label="Hide toast" onClick={() => setOpen(false)}><X size={14} /></button>
+          <button type="button" aria-label="Hide toast" onClick={() => setOpen(false)}><X size={13} /></button>
         </div>
       </div>
     )
@@ -204,9 +277,9 @@ function BootstrapPreview({ lesson }: { lesson: BootstrapLesson }) {
   return (
     <div className="bs-alert-mini">
       <div className={`bs-alert-card ${open ? 'hidden' : ''}`}>
-        <CheckCircle2 size={18} />
+        <CheckCircle2 size={17} />
         <span>Saved successfully.</span>
-        <button type="button" aria-label="Dismiss alert" onClick={() => setOpen(true)}><X size={15} /></button>
+        <button type="button" aria-label="Dismiss alert" onClick={() => setOpen(true)}><X size={14} /></button>
       </div>
       {open && <button type="button" className="reset-alert" onClick={() => setOpen(false)}>Reset alert</button>}
     </div>
@@ -230,7 +303,7 @@ function BootstrapCard({
         <h3>{lesson.title}</h3>
         <p>{lesson.description}</p>
         <button type="button" onClick={() => onOpen(lesson)} className="learn-link">
-          Study component <ArrowRight size={15} />
+          Study component <ArrowRight size={14} />
         </button>
       </div>
     </article>
@@ -238,19 +311,19 @@ function BootstrapCard({
 }
 
 function App() {
+  const searchRef = useRef<HTMLInputElement | null>(null)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof categories)[number]>('All')
   const [selected, setSelected] = useState<AnimationLesson | null>(null)
   const [selectedBootstrap, setSelectedBootstrap] = useState<BootstrapLesson | null>(null)
-  const [duration, setDuration] = useState(850)
+  const [duration, setDuration] = useState(900)
   const [easing, setEasing] = useState('cubic-bezier(.2,.8,.2,1)')
   const [iterations, setIterations] = useState('1')
   const [replayKey, setReplayKey] = useState(0)
   const [copied, setCopied] = useState(false)
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem('motionlab-theme')
-    return saved === 'light' ? 'light' : 'dark'
-  })
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (
+    localStorage.getItem('motionlab-theme') === 'light' ? 'light' : 'dark'
+  ))
   const [learned, setLearned] = useState<Set<string>>(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem('motionlab-learned') ?? '[]'))
@@ -258,11 +331,14 @@ function App() {
       return new Set()
     }
   })
-  const [playgroundId, setPlaygroundId] = useState('bounce')
+  const [playgroundId, setPlaygroundId] = useState('hover-tilt')
   const [playgroundDuration, setPlaygroundDuration] = useState(900)
-  const [playgroundEasing, setPlaygroundEasing] = useState('ease')
+  const [playgroundEasing, setPlaygroundEasing] = useState('cubic-bezier(.2,.8,.2,1)')
   const [playgroundIterations, setPlaygroundIterations] = useState('infinite')
   const [playgroundKey, setPlaygroundKey] = useState(0)
+  const featured = useMemo(() => animations.filter((animation) => animation.featured), [])
+  const [heroIndex, setHeroIndex] = useState(0)
+  const [heroKey, setHeroKey] = useState(0)
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -272,12 +348,23 @@ function App() {
         !normalized ||
         animation.title.toLowerCase().includes(normalized) ||
         animation.description.toLowerCase().includes(normalized) ||
-        animation.category.toLowerCase().includes(normalized)
+        animation.category.toLowerCase().includes(normalized) ||
+        animation.tags?.some((tag) => tag.toLowerCase().includes(normalized))
       return categoryMatch && searchMatch
     })
   }, [category, query])
 
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    categories.forEach((item) => {
+      counts.set(item, item === 'All' ? animations.length : animations.filter((animation) => animation.category === item).length)
+    })
+    return counts
+  }, [])
+
   const playgroundAnimation = animations.find((animation) => animation.id === playgroundId) ?? animations[0]
+  const heroAnimation = featured[heroIndex % Math.max(featured.length, 1)] ?? animations[0]
+  const progress = Math.round((learned.size / animations.length) * 100)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -289,7 +376,25 @@ function App() {
   }, [learned])
 
   useEffect(() => {
+    const timer = window.setInterval(() => {
+      setHeroIndex((index) => (index + 1) % Math.max(featured.length, 1))
+      setHeroKey((value) => value + 1)
+    }, 2800)
+    return () => window.clearInterval(timer)
+  }, [featured.length])
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === '/' &&
+        !(event.target instanceof HTMLInputElement) &&
+        !(event.target instanceof HTMLTextAreaElement) &&
+        !(event.target instanceof HTMLSelectElement)
+      ) {
+        event.preventDefault()
+        searchRef.current?.focus()
+      }
+
       if (event.key === 'Escape') {
         setSelected(null)
         setSelectedBootstrap(null)
@@ -299,9 +404,15 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  useEffect(() => {
+    const shouldLock = Boolean(selected || selectedBootstrap)
+    document.body.style.overflow = shouldLock ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [selected, selectedBootstrap])
+
   const openLesson = (animation: AnimationLesson) => {
     setSelected(animation)
-    setDuration(animation.duration ?? 850)
+    setDuration(animation.duration ?? 900)
     setEasing(animation.easing ?? 'ease')
     setIterations(animation.iterations ?? '1')
     setReplayKey((value) => value + 1)
@@ -310,7 +421,7 @@ function App() {
   const copyText = async (text: string) => {
     await navigator.clipboard.writeText(text)
     setCopied(true)
-    window.setTimeout(() => setCopied(false), 1500)
+    window.setTimeout(() => setCopied(false), 1400)
   }
 
   const toggleLearned = (id: string) => {
@@ -323,24 +434,19 @@ function App() {
   }
 
   const surpriseMe = () => {
-    const random = animations[Math.floor(Math.random() * animations.length)]
-    openLesson(random)
+    openLesson(animations[Math.floor(Math.random() * animations.length)])
   }
 
   const injectedKeyframes = animations.map(buildAnimationCss).join('\n')
-  const progress = Math.round((learned.size / animations.length) * 100)
 
   return (
     <>
       <style>{injectedKeyframes}</style>
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <div className="page-grid" />
 
       <header className="site-header">
         <a className="brand" href="#top" aria-label="MotionLab home">
-          <span className="brand-mark"><WandSparkles size={20} /></span>
-          <span>Motion<span>Lab</span></span>
+          <span className="brand-mark">M</span>
+          <span>MotionLab</span>
         </a>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
@@ -348,16 +454,17 @@ function App() {
         </nav>
 
         <div className="header-actions">
+          <span className="header-count">{animations.length} motions</span>
           <button
             className="icon-button"
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
           <a className="icon-button github-link" href="https://github.com/Rishikeshsanin/animation-website" target="_blank" rel="noreferrer" aria-label="GitHub repository">
-            <Github size={18} />
+            <Github size={17} />
           </a>
         </div>
       </header>
@@ -365,72 +472,93 @@ function App() {
       <main id="top">
         <section className="hero section-shell">
           <div className="hero-copy">
-            <div className="eyebrow"><Sparkles size={15} /> Learn motion by seeing it</div>
-            <h1>Web animation,<br /><span>finally visual.</span></h1>
+            <span className="eyebrow">Interactive motion reference</span>
+            <h1>Learn motion by<br />watching it <em>move.</em></h1>
             <p>
-              Explore CSS motion one concept at a time. Replay it, understand it,
-              change the timing, and copy the exact code when it clicks.
+              A practical animation library for developers. Preview effects in place,
+              inspect the timing, tune the easing, then copy clean CSS into your project.
             </p>
+
             <div className="hero-actions">
-              <a className="primary-cta" href="#library">Explore animations <ArrowRight size={17} /></a>
-              <button className="secondary-cta" type="button" onClick={surpriseMe}><Zap size={17} /> Surprise me</button>
+              <a className="primary-cta" href="#library">Browse the library <ArrowRight size={16} /></a>
+              <button className="secondary-cta" type="button" onClick={surpriseMe}><Zap size={16} /> Random motion</button>
             </div>
-            <div className="hero-proof">
-              <span><strong>{animations.length}</strong> CSS lessons</span>
-              <i />
+
+            <div className="hero-meta">
+              <span><strong>{animations.length}</strong> motion recipes</span>
+              <span><strong>{categories.length - 1}</strong> categories</span>
               <span><strong>{bootstrapLessons.length}</strong> Bootstrap labs</span>
-              <i />
-              <span><strong>0</strong> setup required</span>
             </div>
           </div>
 
-          <div className="hero-visual" aria-label="Animated code preview">
-            <div className="visual-window">
-              <div className="window-bar">
-                <span className="traffic"><i /><i /><i /></span>
-                <span>motion.css</span>
-                <span className="live-chip">LIVE</span>
+          <div className="hero-demo">
+            <div className="hero-demo-toolbar">
+              <span>Live preview</span>
+              <div className="hero-pager">
+                <button type="button" aria-label="Previous example" onClick={() => {
+                  setHeroIndex((heroIndex - 1 + featured.length) % featured.length)
+                  setHeroKey((value) => value + 1)
+                }}><ChevronLeft size={15} /></button>
+                <button type="button" aria-label="Next example" onClick={() => {
+                  setHeroIndex((heroIndex + 1) % featured.length)
+                  setHeroKey((value) => value + 1)
+                }}><ChevronRight size={15} /></button>
               </div>
-              <div className="visual-stage">
-                <div className="orbit-track orbit-track-one"><i /></div>
-                <div className="orbit-track orbit-track-two"><i /></div>
-                <div className="hero-cube"><span>M</span></div>
-                <div className="float-tag tag-a">transform</div>
-                <div className="float-tag tag-b">@keyframes</div>
-                <div className="float-tag tag-c">cubic-bezier()</div>
+            </div>
+
+            <div className="hero-demo-stage">
+              <div
+                key={heroKey}
+                className="hero-demo-object"
+                style={{
+                  animationName: `ml-${heroAnimation.id}`,
+                  animationDuration: `${heroAnimation.duration ?? 900}ms`,
+                  animationTimingFunction: heroAnimation.easing ?? 'ease',
+                  animationIterationCount: heroAnimation.iterations === 'infinite' ? 'infinite' : '2',
+                  animationDirection: heroAnimation.iterations === 'infinite' ? 'normal' : 'alternate',
+                  animationFillMode: 'both',
+                }}
+              >
+                <DemoShape animation={heroAnimation} />
               </div>
-              <div className="visual-code">
-                <span><b>@keyframes</b> float {'{'}</span>
-                <span>&nbsp;&nbsp;50% {'{'} <em>transform</em>: translateY(-16px); {'}'}</span>
-                <span>{'}'}</span>
+              <span className="hero-stage-index">0{(heroIndex % featured.length) + 1}</span>
+            </div>
+
+            <div className="hero-demo-footer">
+              <div>
+                <span>{heroAnimation.category}</span>
+                <strong>{heroAnimation.title}</strong>
               </div>
+              <button type="button" onClick={() => openLesson(heroAnimation)}>Inspect <ArrowUpRight size={14} /></button>
             </div>
           </div>
         </section>
 
         <section className="progress-strip section-shell" aria-label="Learning progress">
           <div>
-            <span className="progress-label">Your library progress</span>
-            <strong>{learned.size} / {animations.length} learned</strong>
+            <span>Learning progress</span>
+            <strong>{learned.size} of {animations.length} saved</strong>
           </div>
           <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
-          <span className="progress-percent">{progress}%</span>
+          <span>{progress}%</span>
         </section>
 
         <section className="learn-section section-shell" id="learn">
           <div className="section-heading split-heading">
             <div>
-              <span className="section-kicker">Start here</span>
-              <h2>The four ideas behind almost every CSS animation.</h2>
+              <span className="section-kicker">Core model</span>
+              <h2>Four ideas. Almost every CSS animation.</h2>
             </div>
-            <p>Learn the mental model first. Then every example in the library becomes easier to read and modify.</p>
+            <p>Understand the primitives first, then use the library as a visual reference instead of memorizing syntax.</p>
           </div>
 
           <div className="fundamentals-grid">
             {fundamentals.map((item) => (
               <article className="fundamental-card" key={item.step}>
-                <span className="step-number">{item.step}</span>
-                <div className="fundamental-icon"><Code2 size={20} /></div>
+                <div className="fundamental-top">
+                  <span>{item.step}</span>
+                  <Code2 size={17} />
+                </div>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <code>{item.code}</code>
@@ -440,23 +568,31 @@ function App() {
         </section>
 
         <section className="library-section section-shell" id="library">
-          <div className="section-heading">
-            <span className="section-kicker">CSS animation library</span>
-            <h2>Don’t memorize animation. <span>Play with it.</span></h2>
-            <p>{animations.length} visual lessons, built to be replayed, inspected and copied.</p>
+          <div className="section-heading library-heading">
+            <div>
+              <span className="section-kicker">Animation library</span>
+              <h2>See it first. Open it when you want the details.</h2>
+            </div>
+            <p>Every card previews in-place. Scroll into view or hover any example to replay it without opening anything.</p>
           </div>
 
           <div className="library-toolbar">
             <label className="search-box">
               <Search size={18} />
               <input
+                ref={searchRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search fade, bounce, loader..."
+                placeholder="Search motion, property, or use case..."
                 aria-label="Search animations"
               />
-              {query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15} /></button>}
+              {query ? (
+                <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15} /></button>
+              ) : (
+                <kbd>/</kbd>
+              )}
             </label>
+
             <div className="category-pills" aria-label="Animation categories">
               {categories.map((item) => (
                 <button
@@ -465,15 +601,16 @@ function App() {
                   className={category === item ? 'active' : ''}
                   onClick={() => setCategory(item)}
                 >
-                  {item}
+                  <span>{item}</span>
+                  <small>{categoryCounts.get(item)}</small>
                 </button>
               ))}
             </div>
           </div>
 
           <div className="results-line">
-            <span>{filtered.length} animations</span>
-            <button type="button" onClick={surpriseMe}><Zap size={14} /> Random lesson</button>
+            <div><Grid2X2 size={14} /> <span>{filtered.length} results</span></div>
+            <button type="button" onClick={surpriseMe}><Zap size={14} /> Surprise me</button>
           </div>
 
           {filtered.length > 0 ? (
@@ -484,9 +621,9 @@ function App() {
             </div>
           ) : (
             <div className="empty-state">
-              <Search size={28} />
-              <h3>No animation found.</h3>
-              <p>Try another keyword or reset the category.</p>
+              <Search size={24} />
+              <h3>No matching motion.</h3>
+              <p>Try a broader term or reset the filters.</p>
               <button type="button" onClick={() => { setQuery(''); setCategory('All') }}>Reset filters</button>
             </div>
           )}
@@ -496,10 +633,10 @@ function App() {
           <div className="section-shell">
             <div className="section-heading split-heading">
               <div>
-                <span className="section-kicker bootstrap-kicker">Bootstrap motion lab</span>
-                <h2>Understand what Bootstrap is animating for you.</h2>
+                <span className="section-kicker">Bootstrap motion lab</span>
+                <h2>Know what the component is doing—not just the class name.</h2>
               </div>
-              <p>Interactive component demos with the exact markup pattern behind each transition.</p>
+              <p>Interactive component previews with the Bootstrap markup pattern behind each transition.</p>
             </div>
 
             <div className="bootstrap-grid">
@@ -511,14 +648,17 @@ function App() {
         </section>
 
         <section className="playground-section section-shell" id="playground">
-          <div className="section-heading">
-            <span className="section-kicker">Playground</span>
-            <h2>Change the values. <span>Feel the difference.</span></h2>
-            <p>Use the same animation with different duration, easing and repetition settings.</p>
+          <div className="section-heading split-heading">
+            <div>
+              <span className="section-kicker">Playground</span>
+              <h2>Tune the motion until it feels right.</h2>
+            </div>
+            <p>Change duration, easing and repetition, then copy the exact CSS you just tested.</p>
           </div>
 
           <div className="playground">
             <div className="playground-controls">
+              <div className="control-heading"><SlidersHorizontal size={15} /> Controls</div>
               <label>
                 <span>Animation</span>
                 <select value={playgroundId} onChange={(event) => {
@@ -533,9 +673,9 @@ function App() {
                 <span>Duration <strong>{playgroundDuration}ms</strong></span>
                 <input
                   type="range"
-                  min="200"
-                  max="3000"
-                  step="50"
+                  min="180"
+                  max="3200"
+                  step="20"
                   value={playgroundDuration}
                   onChange={(event) => {
                     setPlaygroundDuration(Number(event.target.value))
@@ -550,7 +690,7 @@ function App() {
                   setPlaygroundEasing(event.target.value)
                   setPlaygroundKey((value) => value + 1)
                 }}>
-                  {easingOptions.map((option) => <option key={option}>{option}</option>)}
+                  {easingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
 
@@ -560,20 +700,19 @@ function App() {
                   setPlaygroundIterations(event.target.value)
                   setPlaygroundKey((value) => value + 1)
                 }}>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="infinite">Infinite</option>
+                  <option value="1">Once</option>
+                  <option value="2">Twice</option>
+                  <option value="3">3 times</option>
+                  <option value="infinite">Loop</option>
                 </select>
               </label>
 
               <button type="button" className="play-again" onClick={() => setPlaygroundKey((value) => value + 1)}>
-                <Play size={16} /> Replay
+                <RefreshCw size={15} /> Replay
               </button>
             </div>
 
             <div className="playground-stage">
-              <span className="stage-grid" />
               <div
                 key={playgroundKey}
                 className="playground-object"
@@ -583,58 +722,49 @@ function App() {
               >
                 <DemoShape animation={playgroundAnimation} />
               </div>
-              <span className="stage-caption">{playgroundAnimation.title}</span>
+              <span className="stage-caption">{playgroundAnimation.category} / {playgroundAnimation.title}</span>
             </div>
 
             <div className="playground-code">
               <div className="code-header">
-                <span><Code2 size={15} /> CSS</span>
+                <span><Code2 size={14} /> CSS</span>
                 <button type="button" onClick={() => copyText(buildCodeSnippet(playgroundAnimation, playgroundDuration, playgroundEasing, playgroundIterations))}>
-                  {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy'}
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
               <pre><code>{buildCodeSnippet(playgroundAnimation, playgroundDuration, playgroundEasing, playgroundIterations)}</code></pre>
             </div>
           </div>
         </section>
-
-        <section className="closing-section section-shell">
-          <div className="closing-card">
-            <div>
-              <span className="section-kicker">Keep experimenting</span>
-              <h2>Motion is easier when you can see every decision.</h2>
-              <p>No signup. No database. Just a fast visual reference you can learn from and use in real projects.</p>
-            </div>
-            <a className="primary-cta" href="#library">Open the library <ArrowRight size={17} /></a>
-          </div>
-        </section>
       </main>
 
       <footer className="site-footer section-shell">
-        <a className="brand footer-brand" href="#top">
-          <span className="brand-mark"><WandSparkles size={18} /></span>
-          <span>Motion<span>Lab</span></span>
-        </a>
-        <p>Learn CSS and Bootstrap motion visually.</p>
-        <a href="https://github.com/Rishikeshsanin/animation-website" target="_blank" rel="noreferrer">GitHub <ArrowRight size={14} /></a>
+        <a className="brand footer-brand" href="#top"><span className="brand-mark">M</span><span>MotionLab</span></a>
+        <p>A visual CSS and Bootstrap motion reference.</p>
+        <a href="https://github.com/Rishikeshsanin/animation-website" target="_blank" rel="noreferrer">Source <ArrowUpRight size={13} /></a>
       </footer>
 
       {selected && (
         <div className="lesson-overlay" role="dialog" aria-modal="true" aria-label={selected.title}>
           <button className="overlay-backdrop" type="button" aria-label="Close lesson" onClick={() => setSelected(null)} />
-          <section className="lesson-modal">
-            <div className="lesson-modal-header">
-              <div>
-                <span className="section-kicker">{selected.category}</span>
-                <h2>{selected.title}</h2>
-              </div>
-              <button className="icon-button" type="button" onClick={() => setSelected(null)} aria-label="Close lesson"><X size={19} /></button>
-            </div>
 
-            <div className="lesson-modal-grid">
-              <div className="lesson-demo-panel">
-                <div className="lesson-stage">
-                  <span className="stage-grid" />
+          <section className="lesson-inspector">
+            <header className="inspector-header">
+              <div className="inspector-title">
+                <div className="inspector-breadcrumb">
+                  <span>Library</span><i>/</i><span>{selected.category}</span>
+                </div>
+                <div>
+                  <h2>{selected.title}</h2>
+                  <span className="inspector-level">{selected.level}</span>
+                </div>
+              </div>
+              <button className="icon-button" type="button" onClick={() => setSelected(null)} aria-label="Close lesson"><X size={18} /></button>
+            </header>
+
+            <div className="inspector-layout">
+              <div className="inspector-preview-pane">
+                <div className="inspector-stage">
                   <div
                     key={replayKey}
                     className="lesson-demo-object"
@@ -644,61 +774,89 @@ function App() {
                   >
                     <DemoShape animation={selected} />
                   </div>
-                </div>
-                <button className="play-again" type="button" onClick={() => setReplayKey((value) => value + 1)}>
-                  <RefreshCw size={16} /> Replay animation
-                </button>
 
-                <div className="lesson-controls">
+                  <div className="inspector-stage-controls">
+                    <button type="button" onClick={() => setReplayKey((value) => value + 1)}>
+                      <RefreshCw size={14} /> Replay
+                    </button>
+                    <span>{duration}ms</span>
+                  </div>
+                </div>
+
+                <div className="motion-timeline">
+                  <div className="timeline-labels"><span>0</span><span>50</span><span>100%</span></div>
+                  <div className="timeline-track">
+                    <div
+                      key={`timeline-${replayKey}`}
+                      className="timeline-progress"
+                      style={{
+                        animationDuration: `${duration}ms`,
+                        animationIterationCount: iterations,
+                      }}
+                    />
+                    <i className="timeline-tick tick-a" />
+                    <i className="timeline-tick tick-b" />
+                  </div>
+                </div>
+
+                <div className="inspector-description">
+                  <span>What it does</span>
+                  <p>{selected.description}</p>
+                </div>
+              </div>
+
+              <aside className="inspector-sidebar">
+                <div className="sidebar-section">
+                  <div className="sidebar-section-title"><SlidersHorizontal size={14} /> Motion controls</div>
+
                   <label>
                     <span>Duration <strong>{duration}ms</strong></span>
-                    <input type="range" min="200" max="3000" step="50" value={duration} onChange={(event) => {
+                    <input type="range" min="180" max="3200" step="20" value={duration} onChange={(event) => {
                       setDuration(Number(event.target.value))
                       setReplayKey((value) => value + 1)
                     }} />
                   </label>
-                  <label>
-                    <span>Easing</span>
-                    <select value={easing} onChange={(event) => {
-                      setEasing(event.target.value)
-                      setReplayKey((value) => value + 1)
-                    }}>
-                      {easingOptions.map((option) => <option key={option}>{option}</option>)}
-                    </select>
-                  </label>
+
+                  <div className="easing-grid">
+                    {easingOptions.map((option) => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        className={easing === option.value ? 'active' : ''}
+                        onClick={() => {
+                          setEasing(option.value)
+                          setReplayKey((value) => value + 1)
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <label>
                     <span>Iterations</span>
                     <select value={iterations} onChange={(event) => {
                       setIterations(event.target.value)
                       setReplayKey((value) => value + 1)
                     }}>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="infinite">Infinite</option>
+                      <option value="1">Once</option>
+                      <option value="2">Twice</option>
+                      <option value="3">3 times</option>
+                      <option value="infinite">Loop continuously</option>
                     </select>
                   </label>
                 </div>
-              </div>
 
-              <div className="lesson-copy-panel">
-                <div className="explanation-card">
-                  <span className="mini-eyebrow"><BookOpen size={14} /> What it does</span>
-                  <p>{selected.description}</p>
-                  <div className="concept-row">
-                    <span>Property focus</span>
-                    <strong>{selected.frames.includes('transform') ? 'transform' : selected.frames.includes('opacity') ? 'opacity' : 'visual state'}</strong>
+                <div className="sidebar-section">
+                  <div className="sidebar-section-title"><BookOpen size={14} /> Motion anatomy</div>
+                  <div className="property-list">
+                    {getMotionProperties(selected).map((property) => <span key={property}>{property}</span>)}
                   </div>
-                </div>
-
-                <div className="lesson-code-card">
-                  <div className="code-header">
-                    <span><Code2 size={15} /> Ready-to-use CSS</span>
-                    <button type="button" onClick={() => copyText(buildCodeSnippet(selected, duration, easing, iterations))}>
-                      {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy'}
-                    </button>
+                  <div className="motion-facts">
+                    <div><span>Category</span><strong>{selected.category}</strong></div>
+                    <div><span>Level</span><strong>{selected.level}</strong></div>
+                    <div><span>Default timing</span><strong>{selected.duration}ms</strong></div>
                   </div>
-                  <pre><code>{buildCodeSnippet(selected, duration, easing, iterations)}</code></pre>
                 </div>
 
                 <button
@@ -706,10 +864,20 @@ function App() {
                   className={`learned-button ${learned.has(selected.id) ? 'active' : ''}`}
                   onClick={() => toggleLearned(selected.id)}
                 >
-                  <CheckCircle2 size={17} />
-                  {learned.has(selected.id) ? 'Marked as learned' : 'Mark lesson as learned'}
+                  <CheckCircle2 size={16} />
+                  {learned.has(selected.id) ? 'Saved as learned' : 'Mark as learned'}
+                </button>
+              </aside>
+            </div>
+
+            <div className="inspector-code">
+              <div className="code-header">
+                <span><Code2 size={14} /> Ready-to-use CSS</span>
+                <button type="button" onClick={() => copyText(buildCodeSnippet(selected, duration, easing, iterations))}>
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy CSS'}
                 </button>
               </div>
+              <pre><code>{buildCodeSnippet(selected, duration, easing, iterations)}</code></pre>
             </div>
           </section>
         </div>
@@ -718,29 +886,29 @@ function App() {
       {selectedBootstrap && (
         <div className="lesson-overlay" role="dialog" aria-modal="true" aria-label={selectedBootstrap.title}>
           <button className="overlay-backdrop" type="button" aria-label="Close lesson" onClick={() => setSelectedBootstrap(null)} />
-          <section className="lesson-modal bootstrap-modal">
-            <div className="lesson-modal-header">
-              <div>
-                <span className="section-kicker bootstrap-kicker">Bootstrap component</span>
-                <h2>{selectedBootstrap.title}</h2>
+          <section className="lesson-inspector bootstrap-inspector">
+            <header className="inspector-header">
+              <div className="inspector-title">
+                <div className="inspector-breadcrumb"><span>Bootstrap</span><i>/</i><span>{selectedBootstrap.badge}</span></div>
+                <div><h2>{selectedBootstrap.title}</h2></div>
               </div>
-              <button className="icon-button" type="button" onClick={() => setSelectedBootstrap(null)} aria-label="Close lesson"><X size={19} /></button>
-            </div>
+              <button className="icon-button" type="button" onClick={() => setSelectedBootstrap(null)} aria-label="Close lesson"><X size={18} /></button>
+            </header>
+
             <div className="bootstrap-modal-grid">
               <div>
-                <div className="bootstrap-big-preview">
-                  <BootstrapPreview lesson={selectedBootstrap} />
-                </div>
-                <div className="explanation-card">
-                  <span className="mini-eyebrow"><BookOpen size={14} /> How it works</span>
+                <div className="bootstrap-big-preview"><BootstrapPreview lesson={selectedBootstrap} /></div>
+                <div className="inspector-description">
+                  <span>How it works</span>
                   <p>{selectedBootstrap.concept}</p>
                 </div>
               </div>
-              <div className="lesson-code-card bootstrap-code">
+
+              <div className="inspector-code bootstrap-code">
                 <div className="code-header">
-                  <span><Code2 size={15} /> Bootstrap markup</span>
+                  <span><Code2 size={14} /> Bootstrap markup</span>
                   <button type="button" onClick={() => copyText(selectedBootstrap.code)}>
-                    {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy'}
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
                 <pre><code>{selectedBootstrap.code}</code></pre>
@@ -750,7 +918,7 @@ function App() {
         </div>
       )}
 
-      <div className={`copy-toast ${copied ? 'show' : ''}`}><Check size={15} /> Copied to clipboard</div>
+      <div className={`copy-toast ${copied ? 'show' : ''}`}><Check size={14} /> Copied</div>
     </>
   )
 }
