@@ -2,9 +2,11 @@
 
 MotionLab is an interactive learning and reference website for CSS and Bootstrap motion. Instead of reading animation properties in isolation, you can see an effect in-place, replay it on hover, inspect its timing, tune the easing, and copy ready-to-use CSS.
 
-## Live
+## Deployment status
 
-**https://motionlab-production-2310.up.railway.app**
+**Archived on Railway as of 2026-09-23.**
+
+The application source is fully preserved in this repository. The former Railway deployment was intentionally retired after backup verification; its generated Railway URL should be treated as historical, not live.
 
 ## Highlights
 
@@ -66,11 +68,21 @@ The animation library is data-driven: each lesson stores its keyframes, defaults
 
 ## Deployment
 
-MotionLab is deployed as its own isolated Railway project and service from this repository's `main` branch. It does not share a database or runtime with the owner's other projects.
+MotionLab currently has **no active Railway deployment**.
+
+Before retirement, it ran as its own isolated Railway project/service. The source and non-secret restore metadata were preserved before the runtime was removed.
+
+Preserved archive branch:
+`archive/pre-railway-retirement-2026-09-23`
+
+Canonical restore documentation lives in:
+`Rishikeshsanin/railway-project-hub/backups/motionlab/2026-09-23/`
+
+If MotionLab is deployed to Railway again, it must receive a **new isolated application project**. It must never be deployed inside the governance-only `Railway Project Hub` project.
 
 ## Railway Project Hub governance
 
-MotionLab is registered as **App 01 (`motionlab`)** in the owner's Railway governance model. The canonical governance repository is **https://github.com/Rishikeshsanin/railway-project-hub**. Before any Railway infrastructure change, agents must read [`RAILWAY_HUB_RULES.md`](RAILWAY_HUB_RULES.md) and the canonical Railway Project Hub documentation. MotionLab must remain isolated in its own Railway project; unrelated applications are out of scope.
+MotionLab is permanently registered as **App 01 (`motionlab`)** and is currently **archived** in the owner's Railway governance model. The canonical governance repository is **https://github.com/Rishikeshsanin/railway-project-hub**. Before any future Railway restore or infrastructure change, agents must read [`RAILWAY_HUB_RULES.md`](RAILWAY_HUB_RULES.md) and the canonical Railway Project Hub documentation. App 01 and its slug must never be reused.
 
 ## Privacy & Storage
 
