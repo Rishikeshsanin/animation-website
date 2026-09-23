@@ -70,7 +70,7 @@ MotionLab is deployed as its own isolated Railway project and service from this 
 
 ## Railway Project Hub governance
 
-MotionLab is registered as **App 01 (`motionlab`)** in the owner's Railway governance model. Before any Railway infrastructure change, agents must read [`RAILWAY_HUB_RULES.md`](RAILWAY_HUB_RULES.md) and the canonical Railway Project Hub documentation. MotionLab must remain isolated in its own Railway project; unrelated applications are out of scope.
+MotionLab is registered as **App 01 (`motionlab`)** in the owner's Railway governance model. The canonical governance repository is **https://github.com/Rishikeshsanin/railway-project-hub**. Before any Railway infrastructure change, agents must read [`RAILWAY_HUB_RULES.md`](RAILWAY_HUB_RULES.md) and the canonical Railway Project Hub documentation. MotionLab must remain isolated in its own Railway project; unrelated applications are out of scope.
 
 ## Privacy & Storage
 
