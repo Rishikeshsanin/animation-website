@@ -68,6 +68,10 @@ The animation library is data-driven: each lesson stores its keyframes, defaults
 
 MotionLab is deployed as its own isolated Railway project and service from this repository's `main` branch. It does not share a database or runtime with the owner's other projects.
 
+## Railway Project Hub governance
+
+MotionLab is registered as **App 01 (`motionlab`)** in the owner's Railway governance model. Before any Railway infrastructure change, agents must read [`RAILWAY_HUB_RULES.md`](RAILWAY_HUB_RULES.md) and the canonical Railway Project Hub documentation. MotionLab must remain isolated in its own Railway project; unrelated applications are out of scope.
+
 ## Privacy & Storage
 
 MotionLab is frontend-only. Learning progress and theme preference stay in the user's browser through `localStorage`.
