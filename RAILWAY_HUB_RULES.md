@@ -5,54 +5,57 @@
 - Hub app number: App 01
 - Hub slug: `motionlab`
 - Repository: `https://github.com/Rishikeshsanin/animation-website`
-- Railway project: `MotionLab`
-- Railway project ID: `917d84ff-5ef4-4d64-9629-b731ab79d67b`
-- Production environment: `production`
-- Production service: `motionlab`
+- Status: **archived**
+- Active Railway project: **none**
 - Canonical Hub repository: `https://github.com/Rishikeshsanin/railway-project-hub`
 
+## Historical Railway identity
+Former project:
+- name: `MotionLab`
+- project ID: `917d84ff-5ef4-4d64-9629-b731ab79d67b`
+- environment ID: `bca2ecae-b4dd-4047-87da-428b96be0270`
+
+Former service:
+- name: `motionlab`
+- service ID: `048331c3-43df-4bbb-a1a5-1cea4adcfc5d`
+- former generated domain: `motionlab-production-2310.up.railway.app`
+
+These are historical identifiers only.
+
+The former project container was emptied and renamed to **Railway Project Hub**. Therefore project ID `917d84ff-5ef4-4d64-9629-b731ab79d67b` must never be treated as a MotionLab application project again unless the Hub records a future lifecycle change.
+
 ## Mandatory read-first rule
-Before any Railway change for MotionLab:
+Before any Railway restore/change for MotionLab:
 1. Read the canonical Railway Project Hub `README.md`, `AGENTS.md`, and `RAILWAY_HUB_RULES.md`.
 2. Read this file and this repository's `AGENTS.md`.
-3. Verify the exact Railway project, environment, service, source repository, domain, variables, volumes, and deployment status.
-4. Operate only inside the resources registered to MotionLab.
+3. Verify App 01's current status in `registry/apps.json`.
+4. Verify live Railway state read-only.
+5. Stop if declared and observed state disagree.
 
-If the canonical Hub repository is unavailable, do not create, delete, migrate, reconnect, or reconfigure Railway infrastructure. Read-only inspection is allowed.
+## Restore rule
+MotionLab currently has no active Railway runtime.
 
-## Allowed scope
-MotionLab may modify only its own:
-- Railway project and environments
-- services and deployments
-- app-specific variables and secrets
-- domains
-- volumes/databases if ever explicitly registered
-- GitHub deployment connection
-- app-specific monitoring
+A future Railway restore must:
+- use the preserved source/archive,
+- create a **new isolated MotionLab Railway project**,
+- keep ReturnReview and all other applications out of scope,
+- never use the governance-only Railway Project Hub as an app runtime,
+- verify new project/environment/service/domain IDs,
+- update the Hub registry and changelog only after live verification.
 
 ## Forbidden scope
 Never:
-- modify another application's Railway project, service, deployment, variables, secrets, domain, volume, database, or GitHub connection
-- copy secrets from another app
-- use another app's project because it has spare capacity
-- create cross-app dependencies without explicit user approval and Hub documentation
-- make organization-wide or shared-infrastructure changes for a MotionLab task
-- delete or repurpose resources merely because they appear unused
+- modify another application's Railway project or resources
+- deploy MotionLab inside Railway Project Hub
+- infer current ownership from a historical project/service name or ID
+- reuse another app's credentials or persistence
+- create cross-app dependencies without explicit approval and Hub documentation
 - expose secrets in GitHub, logs, screenshots, URLs, frontend code, or chat
 
-## Production safety
-Use the sequence:
-`read → identify → verify → plan → change → test → verify`.
-
-For destructive or production-impacting actions, inspect dependencies and rollback first and obtain explicit user confirmation immediately before execution.
-
-## Current architecture
-MotionLab is frontend-only and currently requires no database, Supabase project, shared runtime, or cross-app service.
-
-The canonical production deployment is the standalone Railway project `MotionLab`. Any duplicate MotionLab service found inside another Railway project is migration residue and must not be treated as canonical or deleted without the documented cleanup process.
-
-## New resources
-No new Railway resource may be created for MotionLab until it is documented in the canonical Hub registry with owner, purpose, environment, expected name, and isolation boundary.
+## Archive / recovery
+- Preserved source commit: `85e64bd1dd67148893290c5862a1187567b7e54e`
+- Archive branch: `archive/pre-railway-retirement-2026-09-23`
+- Hub backup path: `backups/motionlab/2026-09-23/`
 
 ## Safety priority
 `Isolation > Security > Recoverability > Maintainability > Convenience`.
